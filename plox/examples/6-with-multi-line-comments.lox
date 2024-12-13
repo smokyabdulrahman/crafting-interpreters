@@ -1,0 +1,9 @@
+/*
+this is a long comment
+*/
+/* another one for the fans watching */
+fun amazing_fun() {
+	for(var i = 10; i > 0; i--;) {
+		print "hello world"
+	}
+}

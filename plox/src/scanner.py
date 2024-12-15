@@ -50,7 +50,6 @@ class Scanner:
 
     def scan_token(self) -> None:  # noqa: C901
         c = self.advance()
-        print(f'scan_token: {repr(c)}')
         match c:
             case x if self.is_alpha(c):
                 self.identifier()
@@ -209,7 +208,6 @@ class Scanner:
         )
 
     def identifier(self) -> None:
-        print(f'peek: {repr(self.peek())}')
         while self.is_alpha(self.peek()):
             self.advance()
 
@@ -217,10 +215,7 @@ class Scanner:
         self.add_token(type)
 
     def is_alpha(self, char: str) -> bool:
-        print('hhhh', repr(char))
         if char in ascii_letters or char == '_':
-            print('its alpha bro', repr(char))
             return True
-        print('its not alpha bro', repr(char))
 
         return False

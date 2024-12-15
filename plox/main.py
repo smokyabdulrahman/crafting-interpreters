@@ -1,6 +1,8 @@
 import sys
 
+from src.parser import Parser
 from src.scanner import Scanner
+from src.visitors.ast_printer import AstPrinter
 
 if __name__ == '__main__':
     argv = sys.argv
@@ -9,4 +11,9 @@ if __name__ == '__main__':
 
     with open(argv[1], 'r') as f:
         scanner = Scanner(f.read())
-        print(scanner.scan_tokens())
+        tokens = scanner.scan_tokens()
+        parser = Parser(tokens)
+        expr = parser.parse()
+
+        if expr:
+            print(AstPrinter().print(expr))

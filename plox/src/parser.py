@@ -16,8 +16,12 @@ class Parser:
     def parse(self) -> Expr | None:
         try:
             return self.expression()
-        except ParseError:
+        except ParseError as e:
             # For now, later we are going to handle the exception by syncronizing
+            print(
+                'aaaa',
+                e,
+            )
             return None
 
     def expression(self) -> Expr:
@@ -75,6 +79,8 @@ class Parser:
     def primary(self) -> Expr:
         token = self.__advance()
         match token.type:
+            case TokenType.STRING:
+                return Literal(value=token.lexem)
             case TokenType.NUMBER:
                 return Literal(value=float(token.lexem))
             case TokenType.IDENTIFIER:
@@ -91,7 +97,7 @@ class Parser:
                     raise ParseError('no grouping PAREN_CLOSE')
                 return Grouping(expression=expr)
             case _:
-                raise ParseError('current token is invalid at this position')
+                raise ParseError(f'{token} current token is invalid at this position')
 
     def __previous(self) -> Token:
         return self.tokens[self.current - 1]

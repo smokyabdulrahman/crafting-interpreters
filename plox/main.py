@@ -3,6 +3,7 @@ import sys
 from src.parser import Parser
 from src.scanner import Scanner
 from src.visitors.ast_printer import AstPrinter
+from src.visitors.interpreter import Interpreter
 
 if __name__ == '__main__':
     argv = sys.argv
@@ -15,5 +16,9 @@ if __name__ == '__main__':
         parser = Parser(tokens)
         expr = parser.parse()
 
-        if expr:
-            print(AstPrinter().print(expr))
+        if not expr:
+            raise ValueError('Dude, something went wrong')
+
+        print(AstPrinter().print(expr))
+        interpreter = Interpreter()
+        interpreter.interpret(expr)

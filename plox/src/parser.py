@@ -1,6 +1,7 @@
 from typing import final
 
-from src.ast.schema import Binary, Expr, Grouping, Literal, Unary
+from src.ast.expr.schema import Binary, Expr, Grouping, Literal, Unary
+from src.ast.stmt.schema import Expression, Print, Stmt
 from src.tokens import Token, TokenType
 
 
@@ -13,9 +14,13 @@ class Parser:
         self.tokens = tokens
         self.current = 0
 
-    def parse(self) -> Expr | None:
+    def parse(self) -> list[Stmt] | None:
         try:
-            return self.expression()
+            statements: list[Stmt] = []
+            while not self.__is_at_end():
+                statements.append(self.statement())
+
+            return statements
         except ParseError as e:
             # For now, later we are going to handle the exception by syncronizing
             print(
@@ -23,6 +28,21 @@ class Parser:
                 e,
             )
             return None
+
+    def statement(self) -> Stmt:
+        if self.__match(TokenType.PRINT):
+            return self.print_statement()
+        return self.expression_statement()
+
+    def print_statement(self) -> Stmt:
+        expr = self.expression()
+        self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Print(expression=expr)
+
+    def expression_statement(self) -> Stmt:
+        expr = self.expression()
+        self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return Expression(expression=expr)
 
     def expression(self) -> Expr:
         return self.equality()
@@ -93,8 +113,8 @@ class Parser:
                 return Literal(value=None)
             case TokenType.PAREN_OPEN:
                 expr = self.expression()
-                if not self.__match(TokenType.PAREN_CLOSE):
-                    raise ParseError('no grouping PAREN_CLOSE')
+                self.__consume(TokenType.PAREN_CLOSE, 'no grouping PAREN_CLOSE')
+
                 return Grouping(expression=expr)
             case _:
                 raise ParseError(f'{token} current token is invalid at this position')
@@ -121,3 +141,7 @@ class Parser:
                 return True
 
         return False
+
+    def __consume(self, token_type: TokenType, err_msg: str) -> None:
+        if not self.__match(token_type):
+            raise ParseError(err_msg)

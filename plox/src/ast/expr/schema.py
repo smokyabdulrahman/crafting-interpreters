@@ -3,12 +3,13 @@ from dataclasses import dataclass
 from typing import final
 
 from src.tokens import Token
-from src.visitors.contract import T, Visitor
+
+from .visitor import T, Visitor as ExprVisitor
 
 
 class Expr(ABC):
     @abstractmethod
-    def accept(self, visitor: Visitor[T]) -> T: ...
+    def accept(self, visitor: ExprVisitor[T]) -> T: ...
 
 
 @final
@@ -18,7 +19,7 @@ class Binary(Expr):
     operator: Token
     right: Expr
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: ExprVisitor[T]) -> T:
         return visitor.visitBinary(self)
 
 
@@ -28,7 +29,7 @@ class Unary(Expr):
     operator: Token
     right: Expr
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: ExprVisitor[T]) -> T:
         return visitor.visitUnary(self)
 
 
@@ -37,7 +38,7 @@ class Unary(Expr):
 class Grouping(Expr):
     expression: Expr
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: ExprVisitor[T]) -> T:
         return visitor.visitGrouping(self)
 
 
@@ -46,5 +47,5 @@ class Grouping(Expr):
 class Literal(Expr):
     value: object
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: ExprVisitor[T]) -> T:
         return visitor.visitLiteral(self)

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from src.ast.schema import Binary, Grouping, Literal, Unary
+    from .schema import Binary, Grouping, Literal, Unary
 
 T = TypeVar('T')
 

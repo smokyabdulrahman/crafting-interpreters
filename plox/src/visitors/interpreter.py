@@ -1,20 +1,32 @@
 from typing import TYPE_CHECKING, final
 
+from src.ast.expr.visitor import Visitor as ExprVisitor
+from src.ast.stmt.visitor import Visitor as StmtVisitor
 from src.tokens import TokenType
-from src.visitors.contract import Visitor
 
 if TYPE_CHECKING:
-    from src.ast.schema import Binary, Expr, Grouping, Literal, Unary
+    from src.ast.expr.schema import Binary, Expr, Grouping, Literal, Unary
+    from src.ast.stmt.schema import Expression, Stmt, Print
 
 
 @final
-class Interpreter(Visitor[object]):
-    def interpret(self, expression: 'Expr') -> None:
-        val = self.evaluate(expression)
-        print(f'result: {val}')
+class Interpreter(ExprVisitor[object], StmtVisitor[None]):
+    def interpret(self, statements: list['Stmt']) -> None:
+        for statement in statements:
+            self.execute(statement)
+
+    def execute(self, statement: 'Stmt') -> None:
+        statement.accept(self)
 
     def evaluate(self, expression: 'Expr') -> object:
         return expression.accept(self)
+
+    def visitExpression(self, expression: 'Expression') -> None:
+        self.evaluate(expression.expression)
+
+    def visitPrint(self, print_: 'Print') -> None:
+        val = self.evaluate(print_.expression)
+        print(f'{val}')
 
     def visitBinary(self, binary: 'Binary') -> object:
         left_val = self.evaluate(binary.left)

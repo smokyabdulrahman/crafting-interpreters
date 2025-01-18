@@ -14,11 +14,11 @@ if __name__ == '__main__':
         scanner = Scanner(f.read())
         tokens = scanner.scan_tokens()
         parser = Parser(tokens)
-        expr = parser.parse()
+        statements = parser.parse()
 
-        if not expr:
+        if not statements:
             raise ValueError('Dude, something went wrong')
 
-        print(AstPrinter().print(expr))
+        print(AstPrinter().print(statements))
         interpreter = Interpreter()
-        interpreter.interpret(expr)
+        interpreter.interpret(statements)

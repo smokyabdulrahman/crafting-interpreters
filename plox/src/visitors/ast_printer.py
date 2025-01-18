@@ -1,15 +1,20 @@
 from typing import TYPE_CHECKING, final
 
-from src.visitors.contract import Visitor
+from src.ast.expr.visitor import Visitor as ExprVisitor
+from src.ast.stmt.visitor import Visitor as StmtVistior
 
 if TYPE_CHECKING:
-    from src.ast.schema import Binary, Expr, Grouping, Literal, Unary
+    from src.ast.expr.schema import Binary, Expr, Grouping, Literal, Unary
+    from src.ast.stmt.schema import Stmt, Expression, Print
 
 
 @final
-class AstPrinter(Visitor[str]):
-    def print(self, expr: 'Expr') -> str:
-        return expr.accept(self)
+class AstPrinter(ExprVisitor[str], StmtVistior[str]):
+    def print(self, statements: list['Stmt']) -> str:
+        output = ''
+        for stmt in statements:
+            output += stmt.accept(self)
+        return output
 
     def parenthesize(self, name: str, *exprs: 'Expr') -> str:
         output = f'({name}'
@@ -18,6 +23,12 @@ class AstPrinter(Visitor[str]):
         output += ')'
 
         return output
+
+    def visitExpression(self, expression: 'Expression') -> str:
+        return expression.expression.accept(self)
+
+    def visitPrint(self, print_: 'Print') -> str:
+        return self.parenthesize('print', print_.expression)
 
     def visitBinary(self, binary: 'Binary') -> str:
         return self.parenthesize(binary.operator.lexem, binary.left, binary.right)

@@ -4,12 +4,23 @@ from typing import final
 
 from src.tokens import Token
 
-from .visitor import T, Visitor as ExprVisitor
+from .visitor import T
+from .visitor import Visitor as ExprVisitor
 
 
 class Expr(ABC):
     @abstractmethod
     def accept(self, visitor: ExprVisitor[T]) -> T: ...
+
+
+@final
+@dataclass
+class Assign(Expr):
+    name: Token
+    expr: Expr
+
+    def accept(self, visitor: ExprVisitor[T]) -> T:
+        return visitor.visitAssign(self)
 
 
 @final
@@ -49,3 +60,12 @@ class Literal(Expr):
 
     def accept(self, visitor: ExprVisitor[T]) -> T:
         return visitor.visitLiteral(self)
+
+
+@final
+@dataclass
+class Variable(Expr):
+    name: Token
+
+    def accept(self, visitor: ExprVisitor[T]) -> T:
+        return visitor.visitVariable(self)

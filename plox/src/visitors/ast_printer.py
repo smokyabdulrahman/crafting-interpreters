@@ -4,8 +4,8 @@ from src.ast.expr.visitor import Visitor as ExprVisitor
 from src.ast.stmt.visitor import Visitor as StmtVistior
 
 if TYPE_CHECKING:
-    from src.ast.expr.schema import Binary, Expr, Grouping, Literal, Unary
-    from src.ast.stmt.schema import Stmt, Expression, Print
+    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
+    from src.ast.stmt.schema import Expression, Print, Stmt, Var
 
 
 @final
@@ -30,6 +30,15 @@ class AstPrinter(ExprVisitor[str], StmtVistior[str]):
     def visitPrint(self, print_: 'Print') -> str:
         return self.parenthesize('print', print_.expression)
 
+    def visitVarStmt(self, var_: 'Var') -> str:
+        if not var_.initializer:
+            return f'(define_var {var_.name.lexem} )'
+
+        return self.parenthesize(f'define_var({var_.name.lexem})', var_.initializer)
+
+    def visitAssign(self, assign: 'Assign') -> str:
+        return self.parenthesize(f'assign_var({assign.name.lexem})', assign.expr)
+
     def visitBinary(self, binary: 'Binary') -> str:
         return self.parenthesize(binary.operator.lexem, binary.left, binary.right)
 
@@ -44,3 +53,6 @@ class AstPrinter(ExprVisitor[str], StmtVistior[str]):
             return 'nil'
 
         return f'{literal.value}'
+
+    def visitVariable(self, variable: 'Variable') -> str:
+        return f'{variable.name.lexem}'

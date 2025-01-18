@@ -2,12 +2,15 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from .schema import Binary, Grouping, Literal, Unary
+    from .schema import Assign, Binary, Grouping, Literal, Unary, Variable
 
 T = TypeVar('T')
 
 
 class Visitor(Generic[T], ABC):
+    @abstractmethod
+    def visitAssign(self, assign: 'Assign') -> T: ...
+
     @abstractmethod
     def visitBinary(self, binary: 'Binary') -> T: ...
 
@@ -19,3 +22,6 @@ class Visitor(Generic[T], ABC):
 
     @abstractmethod
     def visitLiteral(self, literal: 'Literal') -> T: ...
+
+    @abstractmethod
+    def visitVariable(self, variable: 'Variable') -> T: ...

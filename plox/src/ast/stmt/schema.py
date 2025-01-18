@@ -3,8 +3,10 @@ from dataclasses import dataclass
 from typing import final
 
 from src.ast.expr.schema import Expr
+from src.tokens import Token
 
-from .visitor import T, Visitor as StmtVisitor
+from .visitor import T
+from .visitor import Visitor as StmtVisitor
 
 
 class Stmt(ABC):
@@ -28,3 +30,13 @@ class Print(Stmt):
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitPrint(self)
+
+
+@final
+@dataclass
+class Var(Stmt):
+    name: Token
+    initializer: Expr | None
+
+    def accept(self, visitor: StmtVisitor[T]) -> T:
+        return visitor.visitVarStmt(self)

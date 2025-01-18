@@ -2,15 +2,18 @@ from typing import TYPE_CHECKING, final
 
 from src.ast.expr.visitor import Visitor as ExprVisitor
 from src.ast.stmt.visitor import Visitor as StmtVisitor
+from src.environment import Environment
 from src.tokens import TokenType
 
 if TYPE_CHECKING:
-    from src.ast.expr.schema import Binary, Expr, Grouping, Literal, Unary
-    from src.ast.stmt.schema import Expression, Stmt, Print
+    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
+    from src.ast.stmt.schema import Expression, Print, Stmt, Var
 
 
 @final
 class Interpreter(ExprVisitor[object], StmtVisitor[None]):
+    env = Environment()
+
     def interpret(self, statements: list['Stmt']) -> None:
         for statement in statements:
             self.execute(statement)
@@ -27,6 +30,19 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
     def visitPrint(self, print_: 'Print') -> None:
         val = self.evaluate(print_.expression)
         print(f'{val}')
+
+    def visitVarStmt(self, var_: 'Var') -> None:
+        value = None
+
+        if var_.initializer:
+            value = self.evaluate(var_.initializer)
+
+        self.env.define(var_.name.lexem, value)
+
+    def visitAssign(self, assign: 'Assign') -> object:
+        value = self.evaluate(assign.expr)
+        self.env.assign(assign.name.lexem, value)
+        return value
 
     def visitBinary(self, binary: 'Binary') -> object:
         left_val = self.evaluate(binary.left)
@@ -76,6 +92,9 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
 
     def visitLiteral(self, literal: 'Literal') -> object:
         return literal.value
+
+    def visitVariable(self, variable: 'Variable') -> object:
+        return self.env.get(variable.name.lexem)
 
     def __is_equal(self, left: object, right: object) -> bool:
         if not left and not right:

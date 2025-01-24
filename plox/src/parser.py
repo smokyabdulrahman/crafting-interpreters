@@ -1,7 +1,7 @@
 from typing import final
 
 from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-from src.ast.stmt.schema import Expression, Print, Stmt, Var
+from src.ast.stmt.schema import Block, Expression, Print, Stmt, Var
 from src.tokens import Token, TokenType
 
 
@@ -38,6 +38,8 @@ class Parser:
     def statement(self) -> Stmt:
         if self.__match(TokenType.PRINT):
             return self.print_statement()
+        if self.__match(TokenType.BRACE_OPEN):
+            return self.block()
         return self.expression_statement()
 
     def var_declaration(self) -> Stmt:
@@ -55,6 +57,14 @@ class Parser:
         expr = self.expression()
         self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(expression=expr)
+
+    def block(self) -> Stmt:
+        statements: list[Stmt] = []
+        while not self.__check(TokenType.BRACE_CLOSE) and not self.__is_at_end():
+            statements.append(self.declaration())
+
+        self.__consume(TokenType.BRACE_CLOSE, "Block supposed to be closed with '}'")
+        return Block(statements=statements)
 
     def expression_statement(self) -> Stmt:
         expr = self.expression()
@@ -165,13 +175,21 @@ class Parser:
     def __is_at_end(self) -> bool:
         return self.__peek().type == TokenType.EOF
 
-    def __match(self, *token_types: TokenType) -> bool:
+    def __check(self, *token_types: TokenType) -> bool:
+        # there might be a bug
         for token_type in token_types:
             if self.tokens[self.current].type == token_type:
-                self.__advance()
                 return True
 
         return False
+
+    def __match(self, *token_types: TokenType) -> bool:
+        res = self.__check(*token_types)
+
+        if res:
+            self.__advance()
+
+        return res
 
     def __consume(self, token_type: TokenType, err_msg: str) -> Token:
         if not self.__match(token_type):

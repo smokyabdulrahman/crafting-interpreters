@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, final
 
 from src.ast.expr.visitor import Visitor as ExprVisitor
+from src.ast.stmt.schema import Block
 from src.ast.stmt.visitor import Visitor as StmtVistior
 
 if TYPE_CHECKING:
@@ -35,6 +36,14 @@ class AstPrinter(ExprVisitor[str], StmtVistior[str]):
             return f'(define_var {var_.name.lexem} )'
 
         return self.parenthesize(f'define_var({var_.name.lexem})', var_.initializer)
+
+    def visitBlock(self, block_: 'Block') -> str:
+        output = '(block'
+        for stmt in block_.statements:
+            output += f' {stmt.accept(self)}'
+        output += ')'
+
+        return output
 
     def visitAssign(self, assign: 'Assign') -> str:
         return self.parenthesize(f'assign_var({assign.name.lexem})', assign.expr)

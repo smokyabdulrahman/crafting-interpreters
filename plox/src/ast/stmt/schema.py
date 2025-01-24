@@ -40,3 +40,12 @@ class Var(Stmt):
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitVarStmt(self)
+
+
+@final
+@dataclass
+class Block(Stmt):
+    statements: list[Stmt]
+
+    def accept(self, visitor: StmtVisitor[T]) -> T:
+        return visitor.visitBlock(self)

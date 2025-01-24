@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, final
 
 from src.ast.expr.visitor import Visitor as ExprVisitor
+from src.ast.stmt.schema import Block
 from src.ast.stmt.visitor import Visitor as StmtVisitor
 from src.environment import Environment
 from src.tokens import TokenType
@@ -21,6 +22,16 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
     def execute(self, statement: 'Stmt') -> None:
         statement.accept(self)
 
+    def executeBlock(self, block_: 'Block', env: Environment) -> None:
+        prev_env = self.env
+
+        try:
+            self.env = env
+            for statement in block_.statements:
+                self.execute(statement)
+        finally:
+            self.env = prev_env
+
     def evaluate(self, expression: 'Expr') -> object:
         return expression.accept(self)
 
@@ -38,6 +49,9 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
             value = self.evaluate(var_.initializer)
 
         self.env.define(var_.name.lexem, value)
+
+    def visitBlock(self, block_: 'Block') -> None:
+        self.executeBlock(block_, Environment(enclosing=self.env))
 
     def visitAssign(self, assign: 'Assign') -> object:
         value = self.evaluate(assign.expr)

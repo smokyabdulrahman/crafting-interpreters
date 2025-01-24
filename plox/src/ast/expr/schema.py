@@ -25,6 +25,17 @@ class Assign(Expr):
 
 @final
 @dataclass
+class Logical(Expr):
+    left: Expr
+    operator: Token
+    right: Expr
+
+    def accept(self, visitor: ExprVisitor[T]) -> T:
+        return visitor.visitLogical(self)
+
+
+@final
+@dataclass
 class Binary(Expr):
     left: Expr
     operator: Token

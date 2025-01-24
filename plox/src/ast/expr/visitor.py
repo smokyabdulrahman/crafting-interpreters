@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from .schema import Assign, Binary, Grouping, Literal, Unary, Variable
+    from .schema import Assign, Binary, Grouping, Literal, Logical, Unary, Variable
 
 T = TypeVar('T')
 
@@ -10,6 +10,9 @@ T = TypeVar('T')
 class Visitor(Generic[T], ABC):
     @abstractmethod
     def visitAssign(self, assign: 'Assign') -> T: ...
+
+    @abstractmethod
+    def visitLogical(self, logical_: 'Logical') -> T: ...
 
     @abstractmethod
     def visitBinary(self, binary: 'Binary') -> T: ...

@@ -1,7 +1,7 @@
 from typing import final
 
-from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-from src.ast.stmt.schema import Block, Expression, Print, Stmt, Var
+from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
+from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var
 from src.tokens import Token, TokenType
 
 
@@ -36,6 +36,8 @@ class Parser:
         return self.statement()
 
     def statement(self) -> Stmt:
+        if self.__match(TokenType.IF):
+            return self.if_statement()
         if self.__match(TokenType.PRINT):
             return self.print_statement()
         if self.__match(TokenType.BRACE_OPEN):
@@ -52,6 +54,17 @@ class Parser:
 
         self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Var(name=name, initializer=initializer)
+
+    def if_statement(self) -> Stmt:
+        self.__consume(TokenType.PAREN_OPEN, "Expect '(' after 'if'.")
+        condition = self.expression()
+        self.__consume(TokenType.PAREN_CLOSE, "Expect ')' after 'if' condition.")
+        then_branch = self.statement()
+        if not self.__match(TokenType.ELSE):
+            return IfStmt(condition=condition, then_branch=then_branch)
+
+        else_branch = self.statement()
+        return IfStmt(condition=condition, then_branch=then_branch, else_branch=else_branch)
 
     def print_statement(self) -> Stmt:
         expr = self.expression()
@@ -75,7 +88,7 @@ class Parser:
         return self.assignment()
 
     def assignment(self) -> Expr:
-        expr = self.equality()
+        expr = self.logical_or()
 
         if self.__match(TokenType.EQUAL):
             equals_token = self.__previous()
@@ -85,6 +98,28 @@ class Parser:
                 return Assign(name=expr.name, expr=value)
 
             raise ParseError(f'{equals_token} invalid assignment target.')
+
+        return expr
+
+    def logical_or(self) -> Expr:
+        expr = self.logical_and()
+        if self.__match(TokenType.OR):
+            return Logical(
+                left=expr,
+                operator=self.__previous(),
+                right=self.logical_and(),
+            )
+
+        return expr
+
+    def logical_and(self) -> Expr:
+        expr = self.equality()
+        if self.__match(TokenType.AND):
+            return Logical(
+                left=expr,
+                operator=self.__previous(),
+                right=self.equality(),
+            )
 
         return expr
 

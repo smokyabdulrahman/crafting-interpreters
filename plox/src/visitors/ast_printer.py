@@ -5,8 +5,8 @@ from src.ast.stmt.schema import Block
 from src.ast.stmt.visitor import Visitor as StmtVistior
 
 if TYPE_CHECKING:
-    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-    from src.ast.stmt.schema import Expression, Print, Stmt, Var
+    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
+    from src.ast.stmt.schema import Expression, IfStmt, Print, Stmt, Var
 
 
 @final
@@ -28,6 +28,18 @@ class AstPrinter(ExprVisitor[str], StmtVistior[str]):
     def visitExpression(self, expression: 'Expression') -> str:
         return expression.expression.accept(self)
 
+    def visitIfStmt(self, if_stmt_: 'IfStmt') -> str:
+        output = '(if '
+        output += if_stmt_.condition.accept(self)
+        output += ' then '
+        output += if_stmt_.then_branch.accept(self)
+
+        if if_stmt_.else_branch:
+            output += ' else '
+            output += if_stmt_.else_branch.accept(self)
+
+        return output
+
     def visitPrint(self, print_: 'Print') -> str:
         return self.parenthesize('print', print_.expression)
 
@@ -47,6 +59,9 @@ class AstPrinter(ExprVisitor[str], StmtVistior[str]):
 
     def visitAssign(self, assign: 'Assign') -> str:
         return self.parenthesize(f'assign_var({assign.name.lexem})', assign.expr)
+
+    def visitLogical(self, logical_: 'Logical') -> str:
+        return f'{logical_.left.accept(self)} {logical_.operator.type} {logical_.right.accept(self)}'
 
     def visitBinary(self, binary: 'Binary') -> str:
         return self.parenthesize(binary.operator.lexem, binary.left, binary.right)

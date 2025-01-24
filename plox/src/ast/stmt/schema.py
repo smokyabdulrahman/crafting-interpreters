@@ -25,6 +25,17 @@ class Expression(Stmt):
 
 @final
 @dataclass
+class IfStmt(Stmt):
+    condition: Expr
+    then_branch: Stmt
+    else_branch: Stmt | None = None
+
+    def accept(self, visitor: StmtVisitor[T]) -> T:
+        return visitor.visitIfStmt(self)
+
+
+@final
+@dataclass
 class Print(Stmt):
     expression: Expr
 

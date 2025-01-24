@@ -1,0 +1,18 @@
+var a = true;
+var b = a or false;
+var c = nil or "yes";
+
+print c;
+
+if (false) {
+	print "sad";
+} else {
+	print "happy";
+}
+if (a or b) {
+	print "we evaluated a only";
+}
+
+if (a and b) {
+	print "we evaluated a and b only";
+}

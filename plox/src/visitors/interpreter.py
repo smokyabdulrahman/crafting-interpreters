@@ -1,14 +1,13 @@
 from typing import TYPE_CHECKING, final
 
 from src.ast.expr.visitor import Visitor as ExprVisitor
-from src.ast.stmt.schema import Block
 from src.ast.stmt.visitor import Visitor as StmtVisitor
 from src.environment import Environment
-from src.tokens import TokenType
+from src.tokens import Token, TokenType
 
 if TYPE_CHECKING:
-    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-    from src.ast.stmt.schema import Expression, Print, Stmt, Var
+    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
+    from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var
 
 
 @final
@@ -38,6 +37,14 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
     def visitExpression(self, expression: 'Expression') -> None:
         self.evaluate(expression.expression)
 
+    def visitIfStmt(self, if_stmt_: 'IfStmt') -> None:
+        condition_result = self.evaluate(if_stmt_.condition)
+
+        if self.__is_truth(condition_result):
+            self.execute(if_stmt_.then_branch)
+        elif if_stmt_.else_branch:
+            self.execute(if_stmt_.else_branch)
+
     def visitPrint(self, print_: 'Print') -> None:
         val = self.evaluate(print_.expression)
         print(f'{val}')
@@ -57,6 +64,19 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
         value = self.evaluate(assign.expr)
         self.env.assign(assign.name.lexem, value)
         return value
+
+    def visitLogical(self, logical_: 'Logical') -> object:
+        left_val = self.evaluate(logical_.left)
+        left_is_truth = self.__is_truth(left_val)
+
+        if logical_.operator.type == TokenType.OR:
+            if left_is_truth:
+                return left_val
+        else:
+            if not left_is_truth:
+                return left_val
+
+        return self.evaluate(logical_.right)
 
     def visitBinary(self, binary: 'Binary') -> object:
         left_val = self.evaluate(binary.left)

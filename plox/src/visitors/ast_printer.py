@@ -6,7 +6,7 @@ from src.ast.stmt.visitor import Visitor as StmtVistior
 
 if TYPE_CHECKING:
     from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-    from src.ast.stmt.schema import Expression, IfStmt, Print, Stmt, Var
+    from src.ast.stmt.schema import Expression, IfStmt, Print, Stmt, Var, While
 
 
 @final
@@ -27,6 +27,9 @@ class AstPrinter(ExprVisitor[str], StmtVistior[str]):
 
     def visitExpression(self, expression: 'Expression') -> str:
         return expression.expression.accept(self)
+
+    def visitWhile(self, while_: 'While') -> str:
+        return f'(while {while_.condition.accept(self)} {while_.statement.accept(self)})'
 
     def visitIfStmt(self, if_stmt_: 'IfStmt') -> str:
         output = '(if '

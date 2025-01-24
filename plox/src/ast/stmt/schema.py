@@ -60,3 +60,13 @@ class Block(Stmt):
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitBlock(self)
+
+
+@final
+@dataclass
+class While(Stmt):
+    condition: Expr
+    statement: Stmt
+
+    def accept(self, visitor: StmtVisitor[T]) -> T:
+        return visitor.visitWhile(self)

@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, final
 from src.ast.expr.visitor import Visitor as ExprVisitor
 from src.ast.stmt.visitor import Visitor as StmtVisitor
 from src.environment import Environment
-from src.tokens import Token, TokenType
+from src.tokens import TokenType
 
 if TYPE_CHECKING:
     from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-    from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var
+    from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var, While
 
 
 @final
@@ -36,6 +36,13 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
 
     def visitExpression(self, expression: 'Expression') -> None:
         self.evaluate(expression.expression)
+
+    def visitWhile(self, while_: 'While') -> None:
+        condition_result = self.evaluate(while_.condition)
+
+        while self.__is_truth(condition_result):
+            self.execute(while_.statement)
+            condition_result = self.evaluate(while_.condition)
 
     def visitIfStmt(self, if_stmt_: 'IfStmt') -> None:
         condition_result = self.evaluate(if_stmt_.condition)

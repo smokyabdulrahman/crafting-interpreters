@@ -1,7 +1,7 @@
 from typing import final
 
 from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var
+from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var, While
 from src.tokens import Token, TokenType
 
 
@@ -36,6 +36,8 @@ class Parser:
         return self.statement()
 
     def statement(self) -> Stmt:
+        if self.__match(TokenType.WHILE):
+            return self.while_statment()
         if self.__match(TokenType.IF):
             return self.if_statement()
         if self.__match(TokenType.PRINT):
@@ -54,6 +56,14 @@ class Parser:
 
         self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Var(name=name, initializer=initializer)
+
+    def while_statment(self) -> Stmt:
+        self.__consume(TokenType.PAREN_OPEN, "Expect '(' after 'while'.")
+        condition = self.expression()
+        self.__consume(TokenType.PAREN_CLOSE, "Expect ')' after 'while' condition.")
+        while_statement_body = self.statement()
+
+        return While(condition=condition, statement=while_statement_body)
 
     def if_statement(self) -> Stmt:
         self.__consume(TokenType.PAREN_OPEN, "Expect '(' after 'if'.")

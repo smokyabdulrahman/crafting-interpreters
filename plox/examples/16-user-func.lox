@@ -1,0 +1,15 @@
+fun count(n) {
+	if (n > 1){
+		count(n-1);
+	}
+
+	print n;
+}
+
+fun salute(name) {
+	print "Hello, " + name + "!";
+	print "Hello" + 1;
+}
+
+count(3);
+salute("Smoky");

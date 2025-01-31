@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import final
+from typing import TYPE_CHECKING, final
 
 from src.tokens import Token
 
 from .visitor import T
 from .visitor import Visitor as ExprVisitor
+
+if TYPE_CHECKING:
+    from src.ast.stmt.schema import Stmt
 
 
 class Expr(ABC):
@@ -57,11 +60,32 @@ class Unary(Expr):
 
 @final
 @dataclass
+class Call(Expr):
+    callee: Expr
+    paren: Token
+    args: list[Expr]
+
+    def accept(self, visitor: ExprVisitor[T]) -> T:
+        return visitor.visitCall(self)
+
+
+@final
+@dataclass
 class Grouping(Expr):
     expression: Expr
 
     def accept(self, visitor: ExprVisitor[T]) -> T:
         return visitor.visitGrouping(self)
+
+
+@final
+@dataclass
+class FuncExpr(Expr):
+    args: list[Token]
+    stmts: list['Stmt']
+
+    def accept(self, visitor: ExprVisitor[T]) -> T:
+        return visitor.visitFuncExpr(self)
 
 
 @final

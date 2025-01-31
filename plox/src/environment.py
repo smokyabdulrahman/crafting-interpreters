@@ -8,7 +8,6 @@ class Environment:
         self.enclosing = enclosing
 
     def define(self, name: str, value: object) -> None:
-        print(name, value)
         self.values[name] = value
 
     def assign(self, name: str, value: object) -> None:

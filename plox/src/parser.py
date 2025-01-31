@@ -1,7 +1,7 @@
 from typing import final
 
-from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var, While
+from src.ast.expr.schema import Assign, Binary, Call, Expr, FuncExpr, Grouping, Literal, Logical, Unary, Variable
+from src.ast.stmt.schema import Block, Expression, FuncStmt, IfStmt, Print, ReturnStmt, Stmt, Var, While
 from src.tokens import Token, TokenType
 
 
@@ -30,12 +30,19 @@ class Parser:
             return None
 
     def declaration(self) -> Stmt:
+        if self.__match(TokenType.FUN):
+            return self.fun_declaration()
+
         if self.__match(TokenType.VAR):
             return self.var_declaration()
 
         return self.statement()
 
     def statement(self) -> Stmt:
+        if self.__match(TokenType.RETURN):
+            return self.return_statment()
+        if self.__match(TokenType.FOR):
+            return self.for_statement()
         if self.__match(TokenType.WHILE):
             return self.while_statment()
         if self.__match(TokenType.IF):
@@ -43,8 +50,29 @@ class Parser:
         if self.__match(TokenType.PRINT):
             return self.print_statement()
         if self.__match(TokenType.BRACE_OPEN):
-            return self.block()
+            statements = self.block()
+            return Block(statements=statements)
         return self.expression_statement()
+
+    def fun_declaration(self) -> Stmt:
+        # fun token is already consumed
+        name = self.__consume(TokenType.IDENTIFIER, 'Expect function name.')
+        self.__consume(TokenType.PAREN_OPEN, 'Expected args list.')
+
+        args: list[Token] = []
+        if not self.__check(TokenType.PAREN_CLOSE):
+            while True:
+                if len(args) >= 255:
+                    raise ParseError("Can't have more than 255 args.")
+                args.append(self.__consume(TokenType.IDENTIFIER, 'Expected identifiers only.'))
+
+                if not self.__match(TokenType.COMMA):
+                    break
+
+        self.__consume(TokenType.PAREN_CLOSE, "expected ')' to close fun call arguments list.")
+        self.__consume(TokenType.BRACE_OPEN, "expected '{' to define fun body.")
+        stmts = self.block()
+        return FuncStmt(name=name, args=args, body=stmts)
 
     def var_declaration(self) -> Stmt:
         # var token is already consumed
@@ -56,6 +84,56 @@ class Parser:
 
         self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Var(name=name, initializer=initializer)
+
+    def return_statment(self) -> Stmt:
+        # I need to check if i am in a function or not
+        # How to know that we are in a function????
+
+        # interpretation:
+        # stop executing statments
+        keyword = self.__previous()
+        value: Expr | None = None
+        if not self.__match(TokenType.SEMICOLON):
+            value = self.expression()
+
+        self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
+
+        return ReturnStmt(keyword, value)
+
+    def for_statement(self) -> Stmt:
+        self.__consume(TokenType.PAREN_OPEN, "Expect '(' after 'while'.")
+        initializer: Stmt | None = None
+        if self.__match(TokenType.SEMICOLON):
+            initializer = None
+        elif self.__match(TokenType.VAR):
+            initializer = self.var_declaration()
+        else:
+            initializer = self.expression_statement()
+
+        condition: Expr | None = None
+        if not self.__check(TokenType.SEMICOLON):
+            condition = self.expression()
+        self.__consume(TokenType.SEMICOLON, "expected ';' after 'while' condition.")
+
+        increment: Expr | None = None
+        if not self.__check(TokenType.PAREN_CLOSE):
+            increment = self.expression()
+        self.__consume(TokenType.PAREN_CLOSE, "expected ';' after 'while' increment.")
+
+        body = self.statement()
+
+        if increment:
+            body = Block(statements=[body, Expression(increment)])
+
+        if not condition:
+            condition = Literal(True)
+
+        body = While(condition, body)
+
+        if initializer:
+            body = Block(statements=[initializer, body])
+
+        return body
 
     def while_statment(self) -> Stmt:
         self.__consume(TokenType.PAREN_OPEN, "Expect '(' after 'while'.")
@@ -81,13 +159,13 @@ class Parser:
         self.__consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return Print(expression=expr)
 
-    def block(self) -> Stmt:
+    def block(self) -> list[Stmt]:
         statements: list[Stmt] = []
         while not self.__check(TokenType.BRACE_CLOSE) and not self.__is_at_end():
             statements.append(self.declaration())
 
         self.__consume(TokenType.BRACE_CLOSE, "Block supposed to be closed with '}'")
-        return Block(statements=statements)
+        return statements
 
     def expression_statement(self) -> Stmt:
         expr = self.expression()
@@ -95,6 +173,9 @@ class Parser:
         return Expression(expression=expr)
 
     def expression(self) -> Expr:
+        # TODO:
+        # handle FunctionExpression
+        #
         return self.assignment()
 
     def assignment(self) -> Expr:
@@ -180,7 +261,40 @@ class Parser:
                 right=self.unary(),
             )
 
-        return self.primary()
+        return self.call()
+
+    def call(self) -> Expr:
+        expr = self.primary()
+
+        while True:
+            if self.__match(TokenType.PAREN_OPEN):
+                expr = self.__finish_call(expr)
+            else:
+                break
+
+        return expr
+
+    def fun_expression(
+        self,
+    ) -> Expr:
+        # fun token is already consumed
+        # anonymous func, no identifer
+        # name = self.__consume(TokenType.IDENTIFIER, 'Expect function name.')
+        self.__consume(TokenType.PAREN_OPEN, 'Expected args list.')
+
+        args: list[Token] = []
+        if not self.__check(TokenType.PAREN_CLOSE):
+            while True:
+                if len(args) >= 255:
+                    raise ParseError("Can't have more than 255 args.")
+                args.append(self.__consume(TokenType.IDENTIFIER, 'Expected identifiers only.'))
+
+                if not self.__match(TokenType.COMMA):
+                    break
+
+        self.__consume(TokenType.PAREN_CLOSE, "expected ')' to close fun call arguments list.")
+        self.__consume(TokenType.BRACE_OPEN, "expected '{' to define fun body.")
+        return FuncExpr(args=args, stmts=self.block())
 
     def primary(self) -> Expr:
         token = self.__advance()
@@ -202,8 +316,10 @@ class Parser:
                 self.__consume(TokenType.PAREN_CLOSE, 'no grouping PAREN_CLOSE')
 
                 return Grouping(expression=expr)
+            case TokenType.FUN:
+                return self.fun_expression()
             case _:
-                raise ParseError(f'{token} current token is invalid at this position')
+                raise ParseError(f'{token}:{token.line} current token is invalid at this position')
 
     def __previous(self) -> Token:
         return self.tokens[self.current - 1]
@@ -241,3 +357,22 @@ class Parser:
             raise ParseError(err_msg)
 
         return self.__previous()
+
+    def __finish_call(self, callee: Expr) -> Expr:
+        args: list[Expr] = []
+        if not self.__check(TokenType.PAREN_CLOSE):
+            while True:
+                if len(args) >= 255:
+                    raise ParseError("Can't have more than 255 args.")
+                args.append(self.expression())
+
+                if not self.__match(TokenType.COMMA):
+                    break
+
+        paren_close = self.__consume(TokenType.PAREN_CLOSE, "expected ')' to close fun call arguments list.")
+
+        return Call(
+            callee=callee,
+            paren=paren_close,
+            args=args,
+        )

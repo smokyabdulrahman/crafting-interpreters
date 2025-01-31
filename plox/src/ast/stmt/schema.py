@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import final
+from typing import TYPE_CHECKING, final
 
-from src.ast.expr.schema import Expr
 from src.tokens import Token
 
 from .visitor import T
 from .visitor import Visitor as StmtVisitor
+
+if TYPE_CHECKING:
+    from src.ast.expr.schema import Expr
 
 
 class Stmt(ABC):
@@ -17,7 +19,7 @@ class Stmt(ABC):
 @final
 @dataclass
 class Expression(Stmt):
-    expression: Expr
+    expression: 'Expr'
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitExpression(self)
@@ -26,7 +28,7 @@ class Expression(Stmt):
 @final
 @dataclass
 class IfStmt(Stmt):
-    condition: Expr
+    condition: 'Expr'
     then_branch: Stmt
     else_branch: Stmt | None = None
 
@@ -37,7 +39,7 @@ class IfStmt(Stmt):
 @final
 @dataclass
 class Print(Stmt):
-    expression: Expr
+    expression: 'Expr'
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitPrint(self)
@@ -45,9 +47,20 @@ class Print(Stmt):
 
 @final
 @dataclass
+class FuncStmt(Stmt):
+    name: Token
+    args: list[Token]
+    body: list[Stmt]
+
+    def accept(self, visitor: StmtVisitor[T]) -> T:
+        return visitor.visitFuncStmt(self)
+
+
+@final
+@dataclass
 class Var(Stmt):
     name: Token
-    initializer: Expr | None
+    initializer: 'Expr | None'
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitVarStmt(self)
@@ -65,8 +78,18 @@ class Block(Stmt):
 @final
 @dataclass
 class While(Stmt):
-    condition: Expr
+    condition: 'Expr'
     statement: Stmt
 
     def accept(self, visitor: StmtVisitor[T]) -> T:
         return visitor.visitWhile(self)
+
+
+@final
+@dataclass
+class ReturnStmt(Stmt):
+    keyword: Token
+    value: 'Expr | None'
+
+    def accept(self, visitor: StmtVisitor[T]) -> T:
+        return visitor.visitReturnStmt(self)

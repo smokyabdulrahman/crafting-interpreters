@@ -1,0 +1,2 @@
+var cc = fun (i) { print i; };
+cc("hello");

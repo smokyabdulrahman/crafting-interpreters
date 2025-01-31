@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from .schema import Block, Expression, IfStmt, Print, Var, While
+    from .schema import Block, Expression, FuncStmt, IfStmt, Print, ReturnStmt, Var, While
 
 T = TypeVar('T')
 
@@ -18,6 +18,9 @@ class Visitor(Generic[T], ABC):
     def visitPrint(self, print_: 'Print') -> T: ...
 
     @abstractmethod
+    def visitFuncStmt(self, func_: 'FuncStmt') -> T: ...
+
+    @abstractmethod
     def visitVarStmt(self, var_: 'Var') -> T: ...
 
     @abstractmethod
@@ -25,3 +28,6 @@ class Visitor(Generic[T], ABC):
 
     @abstractmethod
     def visitWhile(self, while_: 'While') -> T: ...
+
+    @abstractmethod
+    def visitReturnStmt(self, return_: 'ReturnStmt') -> T: ...

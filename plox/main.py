@@ -1,9 +1,9 @@
 import sys
 
+from src.interperter_lib.interpreter import Interpreter
 from src.parser import Parser
 from src.scanner import Scanner
 from src.visitors.ast_printer import AstPrinter
-from src.visitors.interpreter import Interpreter
 
 if __name__ == '__main__':
     argv = sys.argv

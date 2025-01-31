@@ -3,16 +3,23 @@ from typing import TYPE_CHECKING, final
 from src.ast.expr.visitor import Visitor as ExprVisitor
 from src.ast.stmt.visitor import Visitor as StmtVisitor
 from src.environment import Environment
+from src.interperter_lib.exceptions import Return
+from src.interperter_lib.native_lib.time import ClockFunc
+from src.interperter_lib.schema import LoxAnonymousFunction, LoxCallable, LoxFunction
 from src.tokens import TokenType
 
 if TYPE_CHECKING:
-    from src.ast.expr.schema import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-    from src.ast.stmt.schema import Block, Expression, IfStmt, Print, Stmt, Var, While
+    from src.ast.expr.schema import Assign, Binary, Call, Expr, FuncExpr, Grouping, Literal, Logical, Unary, Variable
+    from src.ast.stmt.schema import Block, Expression, FuncStmt, IfStmt, Print, ReturnStmt, Stmt, Var, While
 
 
 @final
 class Interpreter(ExprVisitor[object], StmtVisitor[None]):
-    env = Environment()
+    globals = Environment()
+    env = globals
+
+    def __init__(self) -> None:
+        self.globals.define('clock', ClockFunc())
 
     def interpret(self, statements: list['Stmt']) -> None:
         for statement in statements:
@@ -21,12 +28,12 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
     def execute(self, statement: 'Stmt') -> None:
         statement.accept(self)
 
-    def executeBlock(self, block_: 'Block', env: Environment) -> None:
+    def executeBlock(self, statements: list['Stmt'], env: Environment) -> None:
         prev_env = self.env
 
         try:
             self.env = env
-            for statement in block_.statements:
+            for statement in statements:
                 self.execute(statement)
         finally:
             self.env = prev_env
@@ -56,6 +63,10 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
         val = self.evaluate(print_.expression)
         print(f'{val}')
 
+    def visitFuncStmt(self, func_: 'FuncStmt') -> None:
+        func_definition = LoxFunction(func_, self.env)
+        self.env.define(func_.name.lexem, func_definition)
+
     def visitVarStmt(self, var_: 'Var') -> None:
         value = None
 
@@ -64,13 +75,35 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
 
         self.env.define(var_.name.lexem, value)
 
+    def visitReturnStmt(self, return_: 'ReturnStmt') -> None:
+        value: object | None = None
+
+        if return_.value:
+            value = self.evaluate(return_.value)
+
+        raise Return(value)
+
     def visitBlock(self, block_: 'Block') -> None:
-        self.executeBlock(block_, Environment(enclosing=self.env))
+        self.executeBlock(block_.statements, Environment(enclosing=self.env))
 
     def visitAssign(self, assign: 'Assign') -> object:
         value = self.evaluate(assign.expr)
         self.env.assign(assign.name.lexem, value)
         return value
+
+    def visitCall(self, call_: 'Call') -> object:
+        callee = self.evaluate(call_.callee)
+        args = []
+        for expr in call_.args:
+            args.append(self.evaluate(expr))
+
+        if not isinstance(callee, LoxCallable):
+            raise RuntimeError(f"this isn't a function to be called {call_.paren}")
+
+        if len(args) != callee.arity():
+            raise RuntimeError(f'Expected {callee.arity()} argumnets but got {len(args)}')
+
+        return callee.call(self, args)
 
     def visitLogical(self, logical_: 'Logical') -> object:
         left_val = self.evaluate(logical_.left)
@@ -89,6 +122,9 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
         left_val = self.evaluate(binary.left)
         right_val = self.evaluate(binary.right)
 
+        # TODO: Allow for binary to work disregarding operands types
+        # this might raise exceptions from python
+        # look on how to define a standard for Lox
         match (binary.operator.type, left_val, right_val):
             case (TokenType.PLUS, str(), str()):
                 return left_val + right_val
@@ -127,6 +163,9 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
                 return self.__is_truth(val)
 
         return None
+
+    def visitFuncExpr(self, func_: 'FuncExpr') -> object:
+        return LoxAnonymousFunction(func_, self.env)
 
     def visitGrouping(self, grouping: 'Grouping') -> object:
         return self.evaluate(grouping.expression)

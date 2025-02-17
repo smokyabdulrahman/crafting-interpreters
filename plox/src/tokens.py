@@ -55,7 +55,7 @@ class TokenType(StrEnum):
     EOF = auto()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Token:
     type: TokenType
     lexem: str

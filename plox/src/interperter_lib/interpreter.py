@@ -20,10 +20,14 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
 
     def __init__(self) -> None:
         self.globals.define('clock', ClockFunc())
+        self.local: dict[object, int] = {}
 
     def interpret(self, statements: list['Stmt']) -> None:
         for statement in statements:
             self.execute(statement)
+
+    def resolve(self, expr: 'Expr', i: int) -> None:
+        self.local[expr] = i
 
     def execute(self, statement: 'Stmt') -> None:
         statement.accept(self)
@@ -88,7 +92,12 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
 
     def visitAssign(self, assign: 'Assign') -> object:
         value = self.evaluate(assign.expr)
-        self.env.assign(assign.name.lexem, value)
+        lvl = self.local.get(assign)
+        if lvl:
+            self.env.assign_at(lvl, assign.name.lexem, value)
+        else:
+            self.env.assign(assign.name.lexem, value)
+
         return value
 
     def visitCall(self, call_: 'Call') -> object:
@@ -174,7 +183,13 @@ class Interpreter(ExprVisitor[object], StmtVisitor[None]):
         return literal.value
 
     def visitVariable(self, variable: 'Variable') -> object:
-        return self.env.get(variable.name.lexem)
+        return self.lookup_var(variable)
+
+    def lookup_var(self, variable: 'Variable') -> object:
+        lvl = self.local.get(variable, None)
+        if lvl is not None:
+            return self.env.get_at(variable.name.lexem, lvl)
+        return self.globals.get(variable.name.lexem)
 
     def __is_equal(self, left: object, right: object) -> bool:
         if not left and not right:

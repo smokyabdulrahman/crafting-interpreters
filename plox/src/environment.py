@@ -21,6 +21,9 @@ class Environment:
 
             raise RuntimeError(f'Variable {name} doesnt exist')
 
+    def assign_at(self, lvl: int, name: str, value: object) -> None:
+        self.ancestor(lvl).values[name] = value
+
     def get(self, name: str) -> object:
         try:
             return self.values[name]
@@ -29,3 +32,14 @@ class Environment:
                 return self.enclosing.get(name)
 
             raise RuntimeError(f'Variable {name} doesnt exist')
+
+    def get_at(self, name: str, lvl: int) -> object:
+        return self.ancestor(lvl).values.get(name)
+
+    def ancestor(self, lvl: int) -> 'Environment':
+        env = self
+        for _ in range(0, lvl):
+            assert env.enclosing
+            env = env.enclosing
+
+        return env

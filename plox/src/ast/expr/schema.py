@@ -17,7 +17,7 @@ class Expr(ABC):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Assign(Expr):
     name: Token
     expr: Expr
@@ -27,7 +27,7 @@ class Assign(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Logical(Expr):
     left: Expr
     operator: Token
@@ -38,7 +38,7 @@ class Logical(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Binary(Expr):
     left: Expr
     operator: Token
@@ -49,7 +49,7 @@ class Binary(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Unary(Expr):
     operator: Token
     right: Expr
@@ -59,7 +59,7 @@ class Unary(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Call(Expr):
     callee: Expr
     paren: Token
@@ -70,7 +70,7 @@ class Call(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Grouping(Expr):
     expression: Expr
 
@@ -79,7 +79,7 @@ class Grouping(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class FuncExpr(Expr):
     args: list[Token]
     stmts: list['Stmt']
@@ -89,7 +89,7 @@ class FuncExpr(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Literal(Expr):
     value: object
 
@@ -98,7 +98,7 @@ class Literal(Expr):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Variable(Expr):
     name: Token
 

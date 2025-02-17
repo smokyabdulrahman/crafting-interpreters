@@ -1,0 +1,16 @@
+fun greet(name) {
+	print "hello " + name;
+}
+
+var greet_fun_expr = fun (name) { print "hello " + name + " i am a lambda fun"; };
+greet("smoky");
+greet_fun_expr("smoky");
+
+fun greet_generator(salutation) {
+	return fun (name) {
+		return salutation + " " + name;
+	};
+}
+
+var salam_fun = greet_generator("salam");
+print salam_fun("smoky");

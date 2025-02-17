@@ -17,7 +17,7 @@ class Stmt(ABC):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Expression(Stmt):
     expression: 'Expr'
 
@@ -26,7 +26,7 @@ class Expression(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class IfStmt(Stmt):
     condition: 'Expr'
     then_branch: Stmt
@@ -37,7 +37,7 @@ class IfStmt(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Print(Stmt):
     expression: 'Expr'
 
@@ -46,7 +46,7 @@ class Print(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class FuncStmt(Stmt):
     name: Token
     args: list[Token]
@@ -57,7 +57,7 @@ class FuncStmt(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Var(Stmt):
     name: Token
     initializer: 'Expr | None'
@@ -67,7 +67,7 @@ class Var(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class Block(Stmt):
     statements: list[Stmt]
 
@@ -76,7 +76,7 @@ class Block(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class While(Stmt):
     condition: 'Expr'
     statement: Stmt
@@ -86,7 +86,7 @@ class While(Stmt):
 
 
 @final
-@dataclass
+@dataclass(frozen=True)
 class ReturnStmt(Stmt):
     keyword: Token
     value: 'Expr | None'

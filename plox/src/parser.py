@@ -279,7 +279,6 @@ class Parser:
     ) -> Expr:
         # fun token is already consumed
         # anonymous func, no identifer
-        # name = self.__consume(TokenType.IDENTIFIER, 'Expect function name.')
         self.__consume(TokenType.PAREN_OPEN, 'Expected args list.')
 
         args: list[Token] = []
